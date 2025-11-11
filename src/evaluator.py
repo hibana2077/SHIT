@@ -5,7 +5,7 @@ import torch
 import torch.nn as nn
 from torch.utils.data import DataLoader
 import timm
-from timm.data import create_transform
+from timm.data import create_transform, resolve_data_config
 import numpy as np
 from sklearn.metrics import classification_report, confusion_matrix, accuracy_score
 from pathlib import Path
@@ -13,7 +13,14 @@ import json
 from typing import Dict, Any
 
 from .config import EvalConfig
-from .utils import set_seed, get_model_complexity, get_memory_usage, load_checkpoint, save_metrics
+from .utils import (
+    set_seed,
+    get_model_complexity,
+    get_memory_usage,
+    load_checkpoint,
+    save_metrics,
+    make_timm_transforms
+)
 from .dataset.ufgvc import UFGVCDataset
 
 
@@ -52,16 +59,23 @@ class Evaluator:
     def _setup_data(self):
         """Setup test data loader"""
         print("\n=== Setting up test dataset ===")
-        
-        # Get transforms from timm
-        test_transform = create_transform(
-            input_size=self.config.img_size,
-            is_training=False,
-            interpolation=self.config.interpolation,
-            crop_pct=self.config.crop_pct,
-            mean=timm.data.IMAGENET_DEFAULT_MEAN,
-            std=timm.data.IMAGENET_DEFAULT_STD,
+
+        # Derive transforms from the target timm model's pretrained config to
+        # ensure evaluation preprocessing matches training/backbone expectations.
+        # Use shared helper to obtain transforms & config
+        test_transform, _, data_cfg = make_timm_transforms(
+            self.config.model_name, pretrained=True
         )
+
+        # Update stored values for transparency
+        resolved_img_size = int(data_cfg.get('input_size', (3, self.config.img_size, self.config.img_size))[-1])
+        self.config.img_size = resolved_img_size
+        if 'interpolation' in data_cfg:
+            self.config.interpolation = data_cfg['interpolation']
+        if 'crop_pct' in data_cfg:
+            self.config.crop_pct = float(data_cfg['crop_pct'])
+
+        # test_transform already created by helper (is_training=False)
         
         # Create dataset
         test_dataset = UFGVCDataset(

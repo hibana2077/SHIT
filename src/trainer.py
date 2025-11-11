@@ -6,7 +6,7 @@ import torch.nn as nn
 import torch.optim as optim
 from torch.utils.data import DataLoader
 import timm
-from timm.data import create_transform
+from timm.data import create_transform, resolve_data_config
 from timm.scheduler import CosineLRScheduler
 from pathlib import Path
 import time
@@ -22,7 +22,8 @@ from .utils import (
     AverageMeter,
     save_checkpoint,
     save_metrics,
-    EarlyStopping
+    EarlyStopping,
+    make_timm_transforms
 )
 from .dataset.ufgvc import UFGVCDataset
 from .evaluator import Evaluator
@@ -89,25 +90,22 @@ class Trainer:
     def _setup_data(self):
         """Setup data loaders"""
         print("\n=== Setting up datasets ===")
-        
-        # Get transforms from timm model
-        train_transform = create_transform(
-            input_size=self.config.img_size,
-            is_training=True,
-            auto_augment='rand-m9-mstd0.5-inc1',
-            interpolation=self.config.interpolation,
-            mean=timm.data.IMAGENET_DEFAULT_MEAN,
-            std=timm.data.IMAGENET_DEFAULT_STD,
+
+        # Always derive transforms from the target timm model's pretrained config
+        # to ensure correct input size and normalization.
+        train_transform, val_transform, data_cfg = make_timm_transforms(
+            self.config.model_name, pretrained=self.config.pretrained
         )
-        
-        val_transform = create_transform(
-            input_size=self.config.img_size,
-            is_training=False,
-            interpolation=self.config.interpolation,
-            crop_pct=self.config.crop_pct,
-            mean=timm.data.IMAGENET_DEFAULT_MEAN,
-            std=timm.data.IMAGENET_DEFAULT_STD,
-        )
+
+        # Persist the resolved sizes in config so downstream code (e.g., FLOPs) matches
+        resolved_img_size = int(data_cfg.get('input_size', (3, self.config.img_size, self.config.img_size))[-1])
+        self.config.img_size = resolved_img_size
+        if 'interpolation' in data_cfg:
+            self.config.interpolation = data_cfg['interpolation']
+        if 'crop_pct' in data_cfg:
+            self.config.crop_pct = float(data_cfg['crop_pct'])
+
+        # Transforms created above using data_cfg
         
         # Create datasets
         train_dataset = UFGVCDataset(
@@ -129,6 +127,7 @@ class Trainer:
         # Update num_classes from dataset
         self.config.num_classes = len(train_dataset.classes)
         print(f"Number of classes: {self.config.num_classes}")
+        print(f"Resolved img_size from model cfg: {self.config.img_size}")
         
         # Create data loaders
         self.train_loader = DataLoader(

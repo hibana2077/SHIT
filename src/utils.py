@@ -10,6 +10,8 @@ import json
 from pathlib import Path
 import psutil
 import os
+import timm
+from timm.data import resolve_data_config, create_transform
 
 
 def set_seed(seed: int = 42):
@@ -128,6 +130,32 @@ def reset_peak_memory_stats():
     """Reset peak memory statistics"""
     if torch.cuda.is_available():
         torch.cuda.reset_peak_memory_stats()
+
+
+# --- Data config / transforms helpers (timm) ---
+def get_timm_data_config(model_name: str, pretrained: bool = True) -> dict:
+    """Resolve timm data config for a given model name.
+
+    Returns a dict including input_size, mean, std, interpolation, crop_pct, etc.
+    """
+    tmp_model = timm.create_model(model_name, pretrained=pretrained, num_classes=0)
+    data_cfg = resolve_data_config({}, model=tmp_model)
+    return data_cfg
+
+
+def make_timm_transforms(model_name: str, pretrained: bool = True):
+    """Create (train_transform, val_transform, data_cfg) for a timm model.
+
+    Args:
+        model_name: timm model name
+        pretrained: whether to use pretrained cfg when resolving data config
+    Returns:
+        (train_transform, val_transform, data_cfg)
+    """
+    data_cfg = get_timm_data_config(model_name, pretrained=pretrained)
+    train_t = create_transform(is_training=True, **data_cfg)
+    val_t = create_transform(is_training=False, **data_cfg)
+    return train_t, val_t, data_cfg
 
 
 class AverageMeter:

@@ -9,7 +9,7 @@ A modular, object-oriented training framework for fine-grained visual classifica
 - ✅ **Performance Metrics**: Comprehensive model analysis with FLOPs, MACs, and memory usage (fvcore & thop)
 - ✅ **Best Model Tracking**: Automatically saves and reports the best model based on validation accuracy
 - ✅ **Sklearn Classification Report**: Detailed per-class metrics and confusion matrix
-- ✅ **TIMM Integration**: Uses timm models with built-in transforms for state-of-the-art architectures
+- ✅ **TIMM Integration**: Automatically resolves model-specific preprocessing (size, mean/std, interpolation) via `resolve_data_config` and applies consistent train/val transforms
 - ✅ **No TQDM**: Clean epoch-by-epoch reporting without progress bars
 - ✅ **Standalone Evaluation**: Separate script for model evaluation on test sets
 
@@ -70,6 +70,29 @@ python3 -m src.train \
     --seed 42 \
     --output-dir ./outputs/soybean_exp1
 ```
+
+### Model-Specific Transforms (Important)
+
+Image size and normalization are now derived directly from the selected timm model's pretrained configuration. You no longer need to manually set `--img-size` unless you intentionally override.
+
+Internally the trainer calls:
+
+```python
+from timm.data import resolve_data_config, create_transform
+data_cfg = resolve_data_config({}, model=model)
+train_transform = create_transform(**data_cfg, is_training=True)
+val_transform = create_transform(**data_cfg, is_training=False)
+```
+
+This guarantees the input size matches the backbone (e.g. 448 for some high-res ViTs). If you pass a conflicting `--img-size`, it will be overridden and the resolved size is printed.
+
+To sanity check a model's transforms without training:
+
+```bash
+python script/test_forward.py --model vit_base_patch32_384 --pretrained
+```
+
+This script reports the resolved `data_cfg` and runs a dummy forward pass.
 
 ### Available Arguments
 
@@ -216,16 +239,16 @@ Epoch [1/100] - Time: 45.23s
 
 ## Examples
 
-### Train a ResNet50 on Cotton80
+### Train a ResNet18 on Cotton80
 
 ```bash
-python -m src.train \
-    --model-name resnet50 \
+python3 -m src.train \
+    --model-name resnet18 \
     --dataset-name cotton80 \
     --batch-size 32 \
     --num-epochs 100 \
     --lr 1e-4 \
-    --output-dir ./outputs/cotton80_resnet50
+    --output-dir ./outputs/cotton80_resnet18
 ```
 
 ### Train with the SAD classification head
@@ -233,8 +256,8 @@ python -m src.train \
 Drop the original FC and use the sparse additive decoder head:
 
 ```bash
-python -m src.train \
-    --model-name resnet50 \
+python3 -m src.train \
+    --model-name resnet18 \
     --dataset-name cotton80 \
     --head sad \
     --sad-K 16 \
@@ -242,13 +265,13 @@ python -m src.train \
     --batch-size 32 \
     --num-epochs 100 \
     --lr 1e-4 \
-    --output-dir ./outputs/cotton80_resnet50_sad
+    --output-dir ./outputs/cotton80_resnet18_sad
 ```
 
 ### Train a Vision Transformer on CUB-200-2011
 
 ```bash
-python -m src.train \
+python3 -m src.train \
     --model-name vit_base_patch16_224 \
     --dataset-name cub_200_2011 \
     --batch-size 64 \
@@ -256,8 +279,18 @@ python -m src.train \
     --lr 5e-5 \
     --weight-decay 1e-4 \
     --warmup-epochs 10 \
-    --img-size 224 \
     --output-dir ./outputs/cub_vit
+
+# For a model with larger native resolution (e.g. 384):
+python3 -m src.train \
+    --model-name vit_base_patch16_384 \
+    --dataset-name cub_200_2011 \
+    --batch-size 32 \
+    --num-epochs 150 \
+    --lr 5e-5 \
+    --weight-decay 1e-4 \
+    --warmup-epochs 10 \
+    --output-dir ./outputs/cub_vit_384
 ```
 
 ### Evaluate a SAD-head checkpoint
@@ -265,7 +298,7 @@ python -m src.train \
 Make sure to pass the same head type and parameters used during training:
 
 ```bash
-python -m src.eval \
+python3 -m src.eval \
     --checkpoint ./outputs/best_model.pth \
     --dataset-name cotton80 \
     --head sad \
