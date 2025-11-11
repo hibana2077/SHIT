@@ -20,6 +20,10 @@ class TrainConfig:
     pretrained: bool = True
     drop_rate: float = 0.0
     drop_path_rate: float = 0.0
+    # Classification head
+    head: str = "fc"  # choices: ['fc', 'sad']
+    sad_K: int = 16
+    sad_top_m: int = 8
     
     # Training settings
     batch_size: int = 32
@@ -77,6 +81,10 @@ class EvalConfig:
     # Model settings
     model_name: str = "resnet50"
     checkpoint_path: str = ""
+    # Classification head
+    head: str = "fc"  # choices: ['fc', 'sad']
+    sad_K: int = 16
+    sad_top_m: int = 8
     
     # Evaluation settings
     batch_size: int = 64

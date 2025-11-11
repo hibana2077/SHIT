@@ -33,6 +33,12 @@ def parse_args():
                         help='Dropout rate (default: 0.0)')
     parser.add_argument('--drop-path-rate', type=float, default=0.0,
                         help='Drop path rate (default: 0.0)')
+    parser.add_argument('--head', type=str, default='fc', choices=['fc', 'sad'],
+                        help='Classification head: fc (default) or sad')
+    parser.add_argument('--sad-K', type=int, default=16,
+                        help='Number of query groups (K) for SAD head (default: 16)')
+    parser.add_argument('--sad-top-m', type=int, default=8,
+                        help='Top-m tokens per query for SAD head (default: 8)')
     
     # Training settings
     parser.add_argument('--batch-size', type=int, default=32,
@@ -105,6 +111,9 @@ def main():
         pretrained=args.pretrained,
         drop_rate=args.drop_rate,
         drop_path_rate=args.drop_path_rate,
+    head=args.head,
+    sad_K=args.sad_K,
+    sad_top_m=args.sad_top_m,
         batch_size=args.batch_size,
         num_epochs=args.num_epochs,
         learning_rate=args.learning_rate,

@@ -88,22 +88,52 @@ class Evaluator:
         )
         
     def _setup_model(self):
-        """Setup and load model"""
-        print(f"\n=== Loading model: {self.config.model_name} ===")
-        
-        # Create model
-        self.model = timm.create_model(
-            self.config.model_name,
-            pretrained=False,
-            num_classes=self.config.num_classes
-        )
-        
+        """Setup and load model (supports FC or SAD head)"""
+        print(f"\n=== Loading model: {self.config.model_name} (head={self.config.head}) ===")
+
+        if self.config.head == 'sad':
+            backbone = timm.create_model(
+                self.config.model_name,
+                pretrained=False,
+                num_classes=0
+            )
+            if hasattr(backbone, 'num_features'):
+                emb_dim = backbone.num_features
+            else:
+                dummy = torch.randn(1, 3, self.config.img_size, self.config.img_size)
+                with torch.no_grad():
+                    feats = backbone.forward_features(dummy)
+                if feats.dim() == 4:
+                    emb_dim = feats.shape[1]
+                elif feats.dim() == 3:
+                    emb_dim = feats.shape[-1]
+                elif feats.dim() == 2:
+                    emb_dim = feats.shape[-1]
+                else:
+                    raise ValueError(f"Cannot infer embedding dimension from shape {feats.shape}")
+
+            from .head.sad import SADHead, SADModel
+            sad_head = SADHead(
+                d=emb_dim,
+                num_classes=self.config.num_classes,
+                K=self.config.sad_K,
+                top_m=self.config.sad_top_m
+            )
+            self.model = SADModel(backbone, sad_head)
+        else:
+            # Standard fc classifier
+            self.model = timm.create_model(
+                self.config.model_name,
+                pretrained=False,
+                num_classes=self.config.num_classes
+            )
+
         # Load checkpoint
         checkpoint = load_checkpoint(self.config.checkpoint_path, self.model)
-        
+
         self.model = self.model.to(self.device)
         self.model.eval()
-        
+
         # Print model info
         num_params = sum(p.numel() for p in self.model.parameters())
         print(f"Total parameters: {num_params:,}")

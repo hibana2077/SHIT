@@ -171,19 +171,55 @@ class Trainer:
             self.test_loader = self.val_loader
         
     def _setup_model(self):
-        """Setup model"""
-        print(f"\n=== Creating model: {self.config.model_name} ===")
-        
-        self.model = timm.create_model(
-            self.config.model_name,
-            pretrained=self.config.pretrained,
-            num_classes=self.config.num_classes,
-            drop_rate=self.config.drop_rate,
-            drop_path_rate=self.config.drop_path_rate
-        )
-        
+        """Setup model (supports standard FC or SAD head)"""
+        print(f"\n=== Creating model: {self.config.model_name} (head={self.config.head}) ===")
+
+        if self.config.head == 'sad':
+            # Create backbone without classifier so forward_features returns tokens/feature map
+            backbone = timm.create_model(
+                self.config.model_name,
+                pretrained=self.config.pretrained,
+                num_classes=0,  # remove classifier
+                drop_rate=self.config.drop_rate,
+                drop_path_rate=self.config.drop_path_rate
+            )
+            # Determine embedding dimension
+            if hasattr(backbone, 'num_features'):
+                emb_dim = backbone.num_features
+            else:
+                # Fallback: try a dummy pass to infer
+                dummy = torch.randn(1, 3, self.config.img_size, self.config.img_size)
+                with torch.no_grad():
+                    feats = backbone.forward_features(dummy)
+                if feats.dim() == 4:
+                    emb_dim = feats.shape[1]
+                elif feats.dim() == 3:
+                    emb_dim = feats.shape[-1]
+                elif feats.dim() == 2:
+                    emb_dim = feats.shape[-1]
+                else:
+                    raise ValueError(f"Cannot infer embedding dimension from shape {feats.shape}")
+
+            from .head.sad import SADHead, SADModel
+            sad_head = SADHead(
+                d=emb_dim,
+                num_classes=self.config.num_classes,
+                K=self.config.sad_K,
+                top_m=self.config.sad_top_m
+            )
+            self.model = SADModel(backbone, sad_head)
+        else:
+            # Standard fc head
+            self.model = timm.create_model(
+                self.config.model_name,
+                pretrained=self.config.pretrained,
+                num_classes=self.config.num_classes,
+                drop_rate=self.config.drop_rate,
+                drop_path_rate=self.config.drop_path_rate
+            )
+
         self.model = self.model.to(self.device)
-        
+
         # Print model info
         num_params = sum(p.numel() for p in self.model.parameters())
         num_trainable = sum(p.numel() for p in self.model.parameters() if p.requires_grad)
@@ -422,6 +458,9 @@ class Trainer:
             num_classes=self.config.num_classes,
             model_name=self.config.model_name,
             checkpoint_path=str(best_checkpoint_path),
+            head=self.config.head,
+            sad_K=self.config.sad_K,
+            sad_top_m=self.config.sad_top_m,
             batch_size=self.config.batch_size,
             img_size=self.config.img_size,
             output_dir=str(self.output_dir / 'final_evaluation'),

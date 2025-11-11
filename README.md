@@ -228,6 +228,23 @@ python -m src.train \
     --output-dir ./outputs/cotton80_resnet50
 ```
 
+### Train with the SAD classification head
+
+Drop the original FC and use the sparse additive decoder head:
+
+```bash
+python -m src.train \
+    --model-name resnet50 \
+    --dataset-name cotton80 \
+    --head sad \
+    --sad-K 16 \
+    --sad-top-m 8 \
+    --batch-size 32 \
+    --num-epochs 100 \
+    --lr 1e-4 \
+    --output-dir ./outputs/cotton80_resnet50_sad
+```
+
 ### Train a Vision Transformer on CUB-200-2011
 
 ```bash
@@ -241,6 +258,20 @@ python -m src.train \
     --warmup-epochs 10 \
     --img-size 224 \
     --output-dir ./outputs/cub_vit
+```
+
+### Evaluate a SAD-head checkpoint
+
+Make sure to pass the same head type and parameters used during training:
+
+```bash
+python -m src.eval \
+    --checkpoint ./outputs/best_model.pth \
+    --dataset-name cotton80 \
+    --head sad \
+    --sad-K 16 \
+    --sad-top-m 8 \
+    --split test
 ```
 
 ### Evaluate with Multiple Datasets
@@ -264,6 +295,7 @@ python -m src.eval \
 The framework supports 16 datasets from UFGVC:
 
 ### Agricultural Datasets
+
 - `cotton80`: Cotton classification (80 classes)
 - `soybean`: Soybean classification
 - `soy_ageing_r1` to `soy_ageing_r6`: Soybean ageing rounds 1-6
@@ -271,6 +303,7 @@ The framework supports 16 datasets from UFGVC:
 - `soyglobal`: Global soybean classification
 
 ### Fine-Grained Recognition
+
 - `cub_200_2011`: Bird species (200 classes)
 - `nabirds`: North American birds
 - `stanford_cars`: Car models
@@ -282,6 +315,7 @@ The framework supports 16 datasets from UFGVC:
 ## Performance Optimization
 
 ### GPU Memory Optimization
+
 ```bash
 # Reduce batch size
 --batch-size 16
@@ -292,6 +326,7 @@ The framework supports 16 datasets from UFGVC:
 ```
 
 ### Speed Optimization
+
 ```bash
 # Increase workers (adjust based on CPU cores)
 --num-workers 8
@@ -303,16 +338,19 @@ The framework supports 16 datasets from UFGVC:
 ## Troubleshooting
 
 ### Out of Memory
+
 - Reduce `--batch-size`
 - Reduce `--img-size`
 - Use a smaller model
 
 ### Slow Training
+
 - Increase `--num-workers`
 - Enable `pin-memory` (default: True)
 - Use mixed precision (add to config if needed)
 
 ### Poor Accuracy
+
 - Increase `--num-epochs`
 - Try different `--lr` values
 - Enable data augmentation (already included via timm)
