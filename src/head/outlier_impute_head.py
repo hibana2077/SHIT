@@ -52,8 +52,6 @@ class OutlierImputeHead(nn.Module):
         self.training_only = bool(training_only)
         self.pool = pool
 
-        # Simple classifier on pooled token features
-        # self.classifier = nn.Linear(d, num_classes)
         self.classifier = nn.Sequential(
             nn.Linear(d, d // 2),
             nn.GELU(),
