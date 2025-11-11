@@ -53,7 +53,12 @@ class OutlierImputeHead(nn.Module):
         self.pool = pool
 
         # Simple classifier on pooled token features
-        self.classifier = nn.Linear(d, num_classes)
+        # self.classifier = nn.Linear(d, num_classes)
+        self.classifier = nn.Sequential(
+            nn.Linear(d, d // 2),
+            nn.GELU(),
+            nn.Linear(d // 2, num_classes)
+        )
 
     def _pool(self, E: torch.Tensor) -> torch.Tensor:
         # E: (B, T, D) -> (B, D)
