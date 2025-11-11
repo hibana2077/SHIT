@@ -116,13 +116,40 @@ class Trainer:
             download=True
         )
         
-        val_dataset = UFGVCDataset(
-            dataset_name=self.config.dataset_name,
-            root=self.config.data_root,
-            split='val',
-            transform=val_transform,
-            download=True
-        )
+        # Validation dataset with configurable split
+        try:
+            val_dataset = UFGVCDataset(
+                dataset_name=self.config.dataset_name,
+                root=self.config.data_root,
+                split=self.config.val_split,
+                transform=val_transform,
+                download=True
+            )
+        except Exception as e:
+            print(f"Warning: Failed to load validation split '{self.config.val_split}': {e}")
+            # Try sensible fallbacks based on available splits
+            available_splits = UFGVCDataset.get_dataset_splits(self.config.dataset_name, self.config.data_root)
+            fallback_order = ['val', 'test', 'train']
+            for split_name in fallback_order:
+                if split_name in available_splits:
+                    print(f"Falling back to split '{split_name}' for validation")
+                    val_dataset = UFGVCDataset(
+                        dataset_name=self.config.dataset_name,
+                        root=self.config.data_root,
+                        split=split_name,
+                        transform=val_transform,
+                        download=True
+                    )
+                    break
+            else:
+                # If unknown, attempt 'val' once more to surface error
+                val_dataset = UFGVCDataset(
+                    dataset_name=self.config.dataset_name,
+                    root=self.config.data_root,
+                    split='val',
+                    transform=val_transform,
+                    download=True
+                )
         
         # Update num_classes from dataset
         self.config.num_classes = len(train_dataset.classes)

@@ -122,6 +122,12 @@ This script reports the resolved `data_cfg` and runs a dummy forward pass.
 - `--gradient-clip`: Gradient clipping (default: 1.0)
 - `--label-smoothing`: Label smoothing (default: 0.1)
 
+**Validation Control:**
+
+- `--val-split`: Which dataset split to use for validation (default: `val`).
+    - Examples: `val`, `test`, or `train`.
+    - Fallback order if missing: `val` → `test` → `train`.
+
 **System Settings:**
 
 - `--num-workers`: Data loading workers (default: 4)

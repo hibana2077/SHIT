@@ -98,6 +98,10 @@ def parse_args():
     parser.add_argument('--eval-freq', type=int, default=1,
                         help='Evaluate every N epochs (default: 1)')
     
+    # Validation split control
+    parser.add_argument('--val-split', type=str, default='val',
+                        help="Which dataset split to use for validation (e.g., 'val', 'test', or 'train'). Default: 'val'")
+    
     return parser.parse_args()
 
 
@@ -140,7 +144,8 @@ def main():
         device=args.device,
         output_dir=args.output_dir,
         save_freq=args.save_freq,
-        eval_freq=args.eval_freq
+        eval_freq=args.eval_freq,
+        val_split=args.val_split
     )
     
     # Print configuration

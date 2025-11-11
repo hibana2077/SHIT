@@ -57,8 +57,11 @@ class TrainConfig:
     
     # Checkpoint settings
     output_dir: str = "./outputs"
-    save_freq: int = 10
+    save_freq: int = 50
     eval_freq: int = 1
+    
+    # Validation control
+    val_split: str = "val"  # which split to use for validation
     
     # Evaluation settings
     eval_metrics: bool = True
