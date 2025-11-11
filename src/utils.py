@@ -193,7 +193,12 @@ def load_checkpoint(checkpoint_path: str, model: nn.Module, optimizer: Optional[
     Returns:
         Checkpoint dictionary
     """
-    checkpoint = torch.load(checkpoint_path, map_location='cpu')
+    # Import config classes for safe loading
+    from src.config import TrainConfig, EvalConfig
+    
+    # Allowlist custom classes for safe loading in PyTorch 2.6+
+    with torch.serialization.safe_globals([TrainConfig, EvalConfig]):
+        checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
     
     model.load_state_dict(checkpoint['model_state_dict'])
     
