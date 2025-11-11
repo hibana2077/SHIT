@@ -38,6 +38,7 @@ pip install -r requirements.txt
 ```
 
 ### Required Dependencies
+
 - torch >= 2.0.0
 - timm >= 0.9.0
 - fvcore >= 0.1.5
@@ -53,10 +54,10 @@ Train a model using the command line:
 
 ```bash
 # Basic training
-python -m src.train --model-name resnet50 --dataset-name cotton80 --num-epochs 100
+python3 -m src.train --model-name resnet50 --dataset-name cotton80 --num-epochs 100
 
 # Advanced training with custom parameters
-python -m src.train \
+python3 -m src.train \
     --model-name efficientnet_b0 \
     --dataset-name soybean \
     --batch-size 64 \
