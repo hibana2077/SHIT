@@ -409,7 +409,7 @@ class Trainer:
         if not best_checkpoint_path.exists():
             print("No best model found, using current model")
         else:
-            checkpoint = torch.load(best_checkpoint_path)
+            checkpoint = torch.load(best_checkpoint_path, weights_only=False)
             self.model.load_state_dict(checkpoint['model_state_dict'])
             print(f"Loaded best model from epoch {checkpoint['epoch'] + 1}")
         
