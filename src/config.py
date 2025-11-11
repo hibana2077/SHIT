@@ -25,6 +25,8 @@ class TrainConfig:
     # Optional custom head specification (used only when head=='custom')
     custom_head_module: Optional[str] = None  # e.g. 'src.head.my_head'
     custom_head_class: Optional[str] = None   # e.g. 'MyHead'
+    # Optional kwargs passed to the custom head constructor
+    custom_head_kwargs: Optional[dict] = None
     
     # Training settings
     batch_size: int = 32
@@ -86,6 +88,8 @@ class EvalConfig:
     head: str = "fc"  # choices now: 'fc', 'custom'
     custom_head_module: Optional[str] = None
     custom_head_class: Optional[str] = None
+    # Optional kwargs passed to the custom head constructor (eval-time)
+    custom_head_kwargs: Optional[dict] = None
     
     # Evaluation settings
     batch_size: int = 64

@@ -3,6 +3,7 @@ Standalone evaluation script
 Usage: python -m src.eval --checkpoint ./outputs/best_model.pth --dataset cotton80
 """
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -40,6 +41,8 @@ def parse_args():
                         help='Python module for custom head (when --head custom)')
     parser.add_argument('--custom-head-class', type=str, default=None,
                         help='Class name inside module for custom head')
+    parser.add_argument('--custom-head-kwargs', type=str, default=None,
+                        help='JSON string of kwargs for custom head (eval instantiation)')
     
     # Evaluation settings
     parser.add_argument('--batch-size', type=int, default=64,
@@ -98,6 +101,8 @@ def main():
     head=args.head,
     custom_head_module=args.custom_head_module,
     custom_head_class=args.custom_head_class,
+    custom_head_kwargs=(json.loads(args.custom_head_kwargs)
+                        if args.custom_head_kwargs else None),
         batch_size=args.batch_size,
         img_size=args.img_size,
         crop_pct=args.crop_pct,

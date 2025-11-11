@@ -3,6 +3,7 @@ Main training script
 Usage: python -m src.train --model resnet50 --dataset cotton80 --epochs 100
 """
 import argparse
+import json
 import sys
 from pathlib import Path
 
@@ -40,6 +41,8 @@ def parse_args():
                         help='Python module path for custom head, e.g., src.head.my_head')
     parser.add_argument('--custom-head-class', type=str, default=None,
                         help='Class name for custom head, e.g., MyHead')
+    parser.add_argument('--custom-head-kwargs', type=str, default=None,
+                        help='JSON string of kwargs for custom head constructor, e.g., "{\"n\":4, \"top_k\":1}"')
     
     # Training settings
     parser.add_argument('--batch-size', type=int, default=32,
@@ -114,7 +117,9 @@ def main():
         drop_path_rate=args.drop_path_rate,
         head=args.head,
         custom_head_module=args.custom_head_module,
-        custom_head_class=args.custom_head_class,
+    custom_head_class=args.custom_head_class,
+    custom_head_kwargs=(json.loads(args.custom_head_kwargs)
+                if args.custom_head_kwargs else None),
         batch_size=args.batch_size,
         num_epochs=args.num_epochs,
         learning_rate=args.learning_rate,

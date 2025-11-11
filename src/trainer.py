@@ -200,7 +200,8 @@ class Trainer:
             from importlib import import_module
             mod = import_module(self.config.custom_head_module)
             HeadCls = getattr(mod, self.config.custom_head_class)
-            head = HeadCls(d=emb_dim, num_classes=self.config.num_classes)
+            head_kwargs = self.config.custom_head_kwargs or {}
+            head = HeadCls(d=emb_dim, num_classes=self.config.num_classes, **head_kwargs)
             # Wrap: if head expects tokens, create simple wrapper
             class _Wrapper(nn.Module):
                 def __init__(self, backbone, head):
@@ -302,6 +303,15 @@ class Trainer:
             
             # Forward pass
             outputs = self.model(images)
+            # If the custom head expands batch (training-time augmentation),
+            # repeat labels accordingly to match the outputs' batch size.
+            if outputs.size(0) != labels.size(0):
+                if outputs.size(0) % labels.size(0) != 0:
+                    raise RuntimeError(
+                        f"Output batch {outputs.size(0)} not divisible by label batch {labels.size(0)}"
+                    )
+                factor = outputs.size(0) // labels.size(0)
+                labels = labels.repeat_interleave(factor)
             loss = self.criterion(outputs, labels)
             
             # Backward pass
@@ -475,6 +485,7 @@ class Trainer:
             head=self.config.head,
             custom_head_module=self.config.custom_head_module,
             custom_head_class=self.config.custom_head_class,
+            custom_head_kwargs=self.config.custom_head_kwargs,
             batch_size=self.config.batch_size,
             img_size=self.config.img_size,
             output_dir=str(self.output_dir / 'final_evaluation'),

@@ -129,7 +129,8 @@ class Evaluator:
             from importlib import import_module
             mod = import_module(self.config.custom_head_module)
             HeadCls = getattr(mod, self.config.custom_head_class)
-            head = HeadCls(d=emb_dim, num_classes=self.config.num_classes)
+            head_kwargs = self.config.custom_head_kwargs or {}
+            head = HeadCls(d=emb_dim, num_classes=self.config.num_classes, **head_kwargs)
             class _Wrapper(nn.Module):
                 def __init__(self, backbone, head):
                     super().__init__()
