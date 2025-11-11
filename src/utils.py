@@ -203,7 +203,8 @@ def load_checkpoint(checkpoint_path: str, model: nn.Module, optimizer: Optional[
     # Filter out profiling metrics added by thop/fvcore (total_ops, total_params)
     state_dict = checkpoint['model_state_dict']
     filtered_state_dict = {k: v for k, v in state_dict.items() 
-                          if not k.endswith(('.total_ops', '.total_params'))}
+                          if not (k.endswith(('.total_ops', '.total_params')) or 
+                                 k in ('total_ops', 'total_params'))}
     
     # Only warn if keys were filtered
     if len(filtered_state_dict) < len(state_dict):
