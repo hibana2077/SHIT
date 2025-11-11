@@ -74,18 +74,21 @@ python3 -m src.train \
 ### Available Arguments
 
 **Dataset Settings:**
+
 - `--dataset-name`: Dataset name (default: cotton80)
   - Available: cotton80, soybean, soy_ageing_r1-r6, soygene, soyglobal, cub_200_2011, stanford_cars, nabirds, fgvc_aircraft, food101, flowers102, oxford_pets
 - `--data-root`: Data directory (default: ./data)
 - `--num-classes`: Number of classes (auto-detected if not specified)
 
 **Model Settings:**
+
 - `--model-name`: Model from timm (default: resnet50)
 - `--pretrained`: Use pretrained weights (default: True)
 - `--drop-rate`: Dropout rate (default: 0.0)
 - `--drop-path-rate`: Drop path rate (default: 0.0)
 
 **Training Settings:**
+
 - `--batch-size`: Batch size (default: 32)
 - `--num-epochs`: Number of epochs (default: 100)
 - `--lr`: Learning rate (default: 1e-4)
@@ -97,6 +100,7 @@ python3 -m src.train \
 - `--label-smoothing`: Label smoothing (default: 0.1)
 
 **System Settings:**
+
 - `--num-workers`: Data loading workers (default: 4)
 - `--seed`: Random seed (default: 42)
 - `--device`: Device [cuda, cpu] (default: cuda)
