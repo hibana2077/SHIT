@@ -20,16 +20,11 @@ class TrainConfig:
     pretrained: bool = True
     drop_rate: float = 0.0
     drop_path_rate: float = 0.0
-    # Classification head
-    head: str = "fc"  # choices: ['fc', 'sad', 'onion']
-    # SAD head params
-    sad_K: int = 16
-    sad_top_m: int = 8
-    # Onion head params
-    onion_K: int = 4
-    onion_top_m: int = 8
-    onion_temperature: float = 0.07
-    onion_use_token_softmax: bool = True
+    # Classification head (SAD/Onion removed; only standard FC)
+    head: str = "fc"  # choices now: 'fc', 'custom'
+    # Optional custom head specification (used only when head=='custom')
+    custom_head_module: Optional[str] = None  # e.g. 'src.head.my_head'
+    custom_head_class: Optional[str] = None   # e.g. 'MyHead'
     
     # Training settings
     batch_size: int = 32
@@ -87,16 +82,10 @@ class EvalConfig:
     # Model settings
     model_name: str = "resnet50"
     checkpoint_path: str = ""
-    # Classification head
-    head: str = "fc"  # choices: ['fc', 'sad', 'onion']
-    # SAD head params
-    sad_K: int = 16
-    sad_top_m: int = 8
-    # Onion head params
-    onion_K: int = 4
-    onion_top_m: int = 8
-    onion_temperature: float = 0.07
-    onion_use_token_softmax: bool = True
+    # Classification head (SAD/Onion removed; only standard FC)
+    head: str = "fc"  # choices now: 'fc', 'custom'
+    custom_head_module: Optional[str] = None
+    custom_head_class: Optional[str] = None
     
     # Evaluation settings
     batch_size: int = 64

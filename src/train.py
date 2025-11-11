@@ -33,23 +33,13 @@ def parse_args():
                         help='Dropout rate (default: 0.0)')
     parser.add_argument('--drop-path-rate', type=float, default=0.0,
                         help='Drop path rate (default: 0.0)')
-    parser.add_argument('--head', type=str, default='fc', choices=['fc', 'sad', 'onion'],
-                        help='Classification head: fc (default), sad, or onion')
-    parser.add_argument('--sad-K', type=int, default=16,
-                        help='Number of query groups (K) for SAD head (default: 16)')
-    parser.add_argument('--sad-top-m', type=int, default=8,
-                        help='Top-m tokens per query for SAD head (default: 8)')
-    # Onion head settings
-    parser.add_argument('--onion-K', type=int, default=4,
-                        help='Number of peel steps K for onion head (default: 4)')
-    parser.add_argument('--onion-top-m', type=int, default=8,
-                        help='Top-m tokens per step for onion head (default: 8)')
-    parser.add_argument('--onion-temperature', type=float, default=0.07,
-                        help='Temperature for token scoring in onion head (default: 0.07)')
-    parser.add_argument('--onion-softmax', dest='onion_use_token_softmax', action='store_true', default=True,
-                        help='Use softmax attention over tokens for onion head (default: True)')
-    parser.add_argument('--onion-no-softmax', dest='onion_use_token_softmax', action='store_false',
-                        help='Disable softmax attention over tokens for onion head')
+    # Classification head
+    parser.add_argument('--head', type=str, default='fc', choices=['fc', 'custom'],
+                        help='Classification head: fc or custom')
+    parser.add_argument('--custom-head-module', type=str, default=None,
+                        help='Python module path for custom head, e.g., src.head.my_head')
+    parser.add_argument('--custom-head-class', type=str, default=None,
+                        help='Class name for custom head, e.g., MyHead')
     
     # Training settings
     parser.add_argument('--batch-size', type=int, default=32,
@@ -123,12 +113,8 @@ def main():
         drop_rate=args.drop_rate,
         drop_path_rate=args.drop_path_rate,
         head=args.head,
-        sad_K=args.sad_K,
-        sad_top_m=args.sad_top_m,
-        onion_K=args.onion_K,
-        onion_top_m=args.onion_top_m,
-        onion_temperature=args.onion_temperature,
-        onion_use_token_softmax=args.onion_use_token_softmax,
+        custom_head_module=args.custom_head_module,
+        custom_head_class=args.custom_head_class,
         batch_size=args.batch_size,
         num_epochs=args.num_epochs,
         learning_rate=args.learning_rate,

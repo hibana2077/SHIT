@@ -170,23 +170,22 @@ class Trainer:
             self.test_loader = self.val_loader
         
     def _setup_model(self):
-        """Setup model (supports standard FC, SAD head, or Onion head)"""
-        print(f"\n=== Creating model: {self.config.model_name} (head={self.config.head}) ===")
-
-        if self.config.head == 'sad' or self.config.head == 'onion':
-            # Create backbone without classifier so forward_features returns tokens/feature map
+        """Setup model (supports standard FC or custom head)"""
+        if self.config.head == 'custom':
+            if not (self.config.custom_head_module and self.config.custom_head_class):
+                raise ValueError("Custom head selected but --custom-head-module or --custom-head-class missing")
+            print(f"\n=== Creating model: {self.config.model_name} (custom head {self.config.custom_head_class}) ===")
             backbone = timm.create_model(
                 self.config.model_name,
                 pretrained=self.config.pretrained,
-                num_classes=0,  # remove classifier
+                num_classes=0,
                 drop_rate=self.config.drop_rate,
                 drop_path_rate=self.config.drop_path_rate
             )
-            # Determine embedding dimension
+            # Infer embedding dimension
             if hasattr(backbone, 'num_features'):
                 emb_dim = backbone.num_features
             else:
-                # Fallback: try a dummy pass to infer
                 dummy = torch.randn(1, 3, self.config.img_size, self.config.img_size)
                 with torch.no_grad():
                     feats = backbone.forward_features(dummy)
@@ -197,29 +196,34 @@ class Trainer:
                 elif feats.dim() == 2:
                     emb_dim = feats.shape[-1]
                 else:
-                    raise ValueError(f"Cannot infer embedding dimension from shape {feats.shape}")
-            if self.config.head == 'sad':
-                from .head.sad import SADHead, SADModel
-                sad_head = SADHead(
-                    d=emb_dim,
-                    num_classes=self.config.num_classes,
-                    K=self.config.sad_K,
-                    top_m=self.config.sad_top_m
-                )
-                self.model = SADModel(backbone, sad_head)
-            else:
-                from .head.onion import OnionPeelHead, OnionPeelModel
-                onion_head = OnionPeelHead(
-                    d=emb_dim,
-                    num_classes=self.config.num_classes,
-                    K=self.config.onion_K,
-                    top_m=self.config.onion_top_m,
-                    use_token_softmax=self.config.onion_use_token_softmax,
-                    temperature=self.config.onion_temperature,
-                )
-                self.model = OnionPeelModel(backbone, onion_head)
+                    raise ValueError(f"Unsupported feature shape {feats.shape}")
+            from importlib import import_module
+            mod = import_module(self.config.custom_head_module)
+            HeadCls = getattr(mod, self.config.custom_head_class)
+            head = HeadCls(d=emb_dim, num_classes=self.config.num_classes)
+            # Wrap: if head expects tokens, create simple wrapper
+            class _Wrapper(nn.Module):
+                def __init__(self, backbone, head):
+                    super().__init__()
+                    self.backbone = backbone
+                    self.head = head
+                def forward(self, x):
+                    feats = self.backbone.forward_features(x)
+                    if isinstance(feats, (list, tuple)):
+                        feats = feats[0]
+                    if feats.dim() == 4:
+                        B,C,H,W = feats.shape
+                        tokens = feats.view(B,C,H*W).permute(0,2,1)
+                    elif feats.dim() == 3:
+                        tokens = feats
+                    elif feats.dim() == 2:
+                        tokens = feats.unsqueeze(1)
+                    else:
+                        raise ValueError(f"Unsupported feature shape {feats.shape}")
+                    return self.head(tokens)
+            self.model = _Wrapper(backbone, head)
         else:
-            # Standard fc head
+            print(f"\n=== Creating model: {self.config.model_name} (fc head) ===")
             self.model = timm.create_model(
                 self.config.model_name,
                 pretrained=self.config.pretrained,
@@ -469,12 +473,8 @@ class Trainer:
             model_name=self.config.model_name,
             checkpoint_path=str(best_checkpoint_path),
             head=self.config.head,
-            sad_K=self.config.sad_K,
-            sad_top_m=self.config.sad_top_m,
-            onion_K=self.config.onion_K,
-            onion_top_m=self.config.onion_top_m,
-            onion_temperature=self.config.onion_temperature,
-            onion_use_token_softmax=self.config.onion_use_token_softmax,
+            custom_head_module=self.config.custom_head_module,
+            custom_head_class=self.config.custom_head_class,
             batch_size=self.config.batch_size,
             img_size=self.config.img_size,
             output_dir=str(self.output_dir / 'final_evaluation'),

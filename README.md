@@ -15,7 +15,7 @@ A modular, object-oriented training framework for fine-grained visual classifica
 
 ## Project Structure
 
-```
+```text
 SHIT/
 ├── src/
 │   ├── __init__.py          # Package initialization
@@ -168,7 +168,7 @@ python -m src.eval \
 
 Training produces the following files in the output directory:
 
-```
+```text
 outputs/
 ├── best_model.pth                    # Best model checkpoint
 ├── checkpoint_epoch_10.pth           # Periodic checkpoints
@@ -182,7 +182,7 @@ outputs/
 
 ### Evaluation Outputs
 
-```
+```text
 eval_results/
 ├── evaluation_results.json           # Evaluation metrics
 ├── classification_report.txt         # Sklearn classification report
@@ -228,7 +228,8 @@ Final evaluation includes:
 ### 5. Epoch Reporting
 
 Training reports after each epoch:
-```
+ 
+```text
 Epoch [1/100] - Time: 45.23s
   Train Loss: 2.3456 | Train Acc: 0.4521
   Val Loss: 2.1234 | Val Acc: 0.5123
@@ -251,22 +252,6 @@ python3 -m src.train \
     --output-dir ./outputs/cotton80_resnet18
 ```
 
-### Train with the SAD classification head
-
-Drop the original FC and use the sparse additive decoder head:
-
-```bash
-python3 -m src.train \
-    --model-name resnet18 \
-    --dataset-name cotton80 \
-    --head sad \
-    --sad-K 16 \
-    --sad-top-m 8 \
-    --batch-size 32 \
-    --num-epochs 100 \
-    --lr 1e-4 \
-    --output-dir ./outputs/cotton80_resnet18_sad
-```
 
 ### Train a Vision Transformer on CUB-200-2011
 
@@ -293,53 +278,32 @@ python3 -m src.train \
     --output-dir ./outputs/cub_vit_384
 ```
 
-### Evaluate a SAD-head checkpoint
+## Custom Head Extension (optional)
 
-### Train with the OnionPeel Orthogonal Residual head
+You can plug in a custom token-based head by providing a module and class name:
 
-The onion head performs iterative (K-step) token peeling: at each step it learns a masked direction, scores tokens, aggregates projections, classifies, and removes explained variance from all tokens.
+1) Implement a class with signature `__init__(self, d: int, num_classes: int, **kwargs)` and `forward(E: Tensor[B,T,D]) -> logits[B,C]`.
+
+2) Place it in a Python module (e.g., `src/head/my_head.py`).
+
+3) Train/Eval with:
 
 ```bash
-python3 -m src.train \
+# Train with a custom head
+python -m src.train \
     --model-name resnet18 \
     --dataset-name cotton80 \
-    --head onion \
-    --onion-K 4 \
-    --onion-top-m 8 \
-    --onion-temperature 0.07 \
-    --batch-size 32 \
-    --num-epochs 100 \
-    --lr 1e-4 \
-    --output-dir ./outputs/cotton80_resnet18_onion
-```
+    --head custom \
+    --custom-head-module src.head.extend \
+    --custom-head-class MinimalExampleHead
 
-To disable softmax weighting over tokens (pure top-m sparse aggregation): add `--onion-no-softmax`.
-
-### Evaluate an Onion head checkpoint
-
-Pass the same head type and hyperparameters used during training:
-
-```bash
-python3 -m src.eval \
+# Evaluate with the same custom head
+python -m src.eval \
     --checkpoint ./outputs/best_model.pth \
     --dataset-name cotton80 \
-    --head onion \
-    --onion-K 4 \
-    --onion-top-m 8 \
-    --onion-temperature 0.07
-```
-
-
-Make sure to pass the same head type and parameters used during training:
-
-```bash
-python3 -m src.eval \
-    --checkpoint ./outputs/best_model.pth \
-    --dataset-name cotton80 \
-    --head sad \
-    --sad-K 16 \
-    --sad-top-m 8 \
-    --split test
+    --head custom \
+    --custom-head-module src.head.extend \
+    --custom-head-class MinimalExampleHead
 ```
 
 ### Evaluate with Multiple Datasets

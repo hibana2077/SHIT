@@ -102,10 +102,11 @@ class Evaluator:
         )
         
     def _setup_model(self):
-        """Setup and load model (supports FC, SAD head, or Onion head)"""
-        print(f"\n=== Loading model: {self.config.model_name} (head={self.config.head}) ===")
-
-        if self.config.head == 'sad' or self.config.head == 'onion':
+        """Setup and load model (supports standard FC or custom head)"""
+        if self.config.head == 'custom':
+            if not (self.config.custom_head_module and self.config.custom_head_class):
+                raise ValueError("Custom head selected but custom_head_module/class not provided")
+            print(f"\n=== Loading model: {self.config.model_name} (custom head {self.config.custom_head_class}) ===")
             backbone = timm.create_model(
                 self.config.model_name,
                 pretrained=False,
@@ -125,28 +126,32 @@ class Evaluator:
                     emb_dim = feats.shape[-1]
                 else:
                     raise ValueError(f"Cannot infer embedding dimension from shape {feats.shape}")
-            if self.config.head == 'sad':
-                from .head.sad import SADHead, SADModel
-                sad_head = SADHead(
-                    d=emb_dim,
-                    num_classes=self.config.num_classes,
-                    K=self.config.sad_K,
-                    top_m=self.config.sad_top_m
-                )
-                self.model = SADModel(backbone, sad_head)
-            else:
-                from .head.onion import OnionPeelHead, OnionPeelModel
-                onion_head = OnionPeelHead(
-                    d=emb_dim,
-                    num_classes=self.config.num_classes,
-                    K=self.config.onion_K,
-                    top_m=self.config.onion_top_m,
-                    use_token_softmax=self.config.onion_use_token_softmax,
-                    temperature=self.config.onion_temperature,
-                )
-                self.model = OnionPeelModel(backbone, onion_head)
+            from importlib import import_module
+            mod = import_module(self.config.custom_head_module)
+            HeadCls = getattr(mod, self.config.custom_head_class)
+            head = HeadCls(d=emb_dim, num_classes=self.config.num_classes)
+            class _Wrapper(nn.Module):
+                def __init__(self, backbone, head):
+                    super().__init__()
+                    self.backbone = backbone
+                    self.head = head
+                def forward(self, x):
+                    feats = self.backbone.forward_features(x)
+                    if isinstance(feats, (list, tuple)):
+                        feats = feats[0]
+                    if feats.dim() == 4:
+                        B,C,H,W = feats.shape
+                        tokens = feats.view(B,C,H*W).permute(0,2,1)
+                    elif feats.dim() == 3:
+                        tokens = feats
+                    elif feats.dim() == 2:
+                        tokens = feats.unsqueeze(1)
+                    else:
+                        raise ValueError(f"Unsupported feature shape {feats.shape}")
+                    return self.head(tokens)
+            self.model = _Wrapper(backbone, head)
         else:
-            # Standard fc classifier
+            print(f"\n=== Loading model: {self.config.model_name} (fc head) ===")
             self.model = timm.create_model(
                 self.config.model_name,
                 pretrained=False,
