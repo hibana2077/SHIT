@@ -295,6 +295,41 @@ python3 -m src.train \
 
 ### Evaluate a SAD-head checkpoint
 
+### Train with the OnionPeel Orthogonal Residual head
+
+The onion head performs iterative (K-step) token peeling: at each step it learns a masked direction, scores tokens, aggregates projections, classifies, and removes explained variance from all tokens.
+
+```bash
+python3 -m src.train \
+    --model-name resnet18 \
+    --dataset-name cotton80 \
+    --head onion \
+    --onion-K 4 \
+    --onion-top-m 8 \
+    --onion-temperature 0.07 \
+    --batch-size 32 \
+    --num-epochs 100 \
+    --lr 1e-4 \
+    --output-dir ./outputs/cotton80_resnet18_onion
+```
+
+To disable softmax weighting over tokens (pure top-m sparse aggregation): add `--onion-no-softmax`.
+
+### Evaluate an Onion head checkpoint
+
+Pass the same head type and hyperparameters used during training:
+
+```bash
+python3 -m src.eval \
+    --checkpoint ./outputs/best_model.pth \
+    --dataset-name cotton80 \
+    --head onion \
+    --onion-K 4 \
+    --onion-top-m 8 \
+    --onion-temperature 0.07
+```
+
+
 Make sure to pass the same head type and parameters used during training:
 
 ```bash

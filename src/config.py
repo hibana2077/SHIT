@@ -21,9 +21,15 @@ class TrainConfig:
     drop_rate: float = 0.0
     drop_path_rate: float = 0.0
     # Classification head
-    head: str = "fc"  # choices: ['fc', 'sad']
+    head: str = "fc"  # choices: ['fc', 'sad', 'onion']
+    # SAD head params
     sad_K: int = 16
     sad_top_m: int = 8
+    # Onion head params
+    onion_K: int = 4
+    onion_top_m: int = 8
+    onion_temperature: float = 0.07
+    onion_use_token_softmax: bool = True
     
     # Training settings
     batch_size: int = 32
@@ -82,9 +88,15 @@ class EvalConfig:
     model_name: str = "resnet50"
     checkpoint_path: str = ""
     # Classification head
-    head: str = "fc"  # choices: ['fc', 'sad']
+    head: str = "fc"  # choices: ['fc', 'sad', 'onion']
+    # SAD head params
     sad_K: int = 16
     sad_top_m: int = 8
+    # Onion head params
+    onion_K: int = 4
+    onion_top_m: int = 8
+    onion_temperature: float = 0.07
+    onion_use_token_softmax: bool = True
     
     # Evaluation settings
     batch_size: int = 64

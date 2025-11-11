@@ -102,10 +102,10 @@ class Evaluator:
         )
         
     def _setup_model(self):
-        """Setup and load model (supports FC or SAD head)"""
+        """Setup and load model (supports FC, SAD head, or Onion head)"""
         print(f"\n=== Loading model: {self.config.model_name} (head={self.config.head}) ===")
 
-        if self.config.head == 'sad':
+        if self.config.head == 'sad' or self.config.head == 'onion':
             backbone = timm.create_model(
                 self.config.model_name,
                 pretrained=False,
@@ -125,15 +125,26 @@ class Evaluator:
                     emb_dim = feats.shape[-1]
                 else:
                     raise ValueError(f"Cannot infer embedding dimension from shape {feats.shape}")
-
-            from .head.sad import SADHead, SADModel
-            sad_head = SADHead(
-                d=emb_dim,
-                num_classes=self.config.num_classes,
-                K=self.config.sad_K,
-                top_m=self.config.sad_top_m
-            )
-            self.model = SADModel(backbone, sad_head)
+            if self.config.head == 'sad':
+                from .head.sad import SADHead, SADModel
+                sad_head = SADHead(
+                    d=emb_dim,
+                    num_classes=self.config.num_classes,
+                    K=self.config.sad_K,
+                    top_m=self.config.sad_top_m
+                )
+                self.model = SADModel(backbone, sad_head)
+            else:
+                from .head.onion import OnionPeelHead, OnionPeelModel
+                onion_head = OnionPeelHead(
+                    d=emb_dim,
+                    num_classes=self.config.num_classes,
+                    K=self.config.onion_K,
+                    top_m=self.config.onion_top_m,
+                    use_token_softmax=self.config.onion_use_token_softmax,
+                    temperature=self.config.onion_temperature,
+                )
+                self.model = OnionPeelModel(backbone, onion_head)
         else:
             # Standard fc classifier
             self.model = timm.create_model(

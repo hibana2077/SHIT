@@ -170,10 +170,10 @@ class Trainer:
             self.test_loader = self.val_loader
         
     def _setup_model(self):
-        """Setup model (supports standard FC or SAD head)"""
+        """Setup model (supports standard FC, SAD head, or Onion head)"""
         print(f"\n=== Creating model: {self.config.model_name} (head={self.config.head}) ===")
 
-        if self.config.head == 'sad':
+        if self.config.head == 'sad' or self.config.head == 'onion':
             # Create backbone without classifier so forward_features returns tokens/feature map
             backbone = timm.create_model(
                 self.config.model_name,
@@ -198,15 +198,26 @@ class Trainer:
                     emb_dim = feats.shape[-1]
                 else:
                     raise ValueError(f"Cannot infer embedding dimension from shape {feats.shape}")
-
-            from .head.sad import SADHead, SADModel
-            sad_head = SADHead(
-                d=emb_dim,
-                num_classes=self.config.num_classes,
-                K=self.config.sad_K,
-                top_m=self.config.sad_top_m
-            )
-            self.model = SADModel(backbone, sad_head)
+            if self.config.head == 'sad':
+                from .head.sad import SADHead, SADModel
+                sad_head = SADHead(
+                    d=emb_dim,
+                    num_classes=self.config.num_classes,
+                    K=self.config.sad_K,
+                    top_m=self.config.sad_top_m
+                )
+                self.model = SADModel(backbone, sad_head)
+            else:
+                from .head.onion import OnionPeelHead, OnionPeelModel
+                onion_head = OnionPeelHead(
+                    d=emb_dim,
+                    num_classes=self.config.num_classes,
+                    K=self.config.onion_K,
+                    top_m=self.config.onion_top_m,
+                    use_token_softmax=self.config.onion_use_token_softmax,
+                    temperature=self.config.onion_temperature,
+                )
+                self.model = OnionPeelModel(backbone, onion_head)
         else:
             # Standard fc head
             self.model = timm.create_model(
@@ -460,6 +471,10 @@ class Trainer:
             head=self.config.head,
             sad_K=self.config.sad_K,
             sad_top_m=self.config.sad_top_m,
+            onion_K=self.config.onion_K,
+            onion_top_m=self.config.onion_top_m,
+            onion_temperature=self.config.onion_temperature,
+            onion_use_token_softmax=self.config.onion_use_token_softmax,
             batch_size=self.config.batch_size,
             img_size=self.config.img_size,
             output_dir=str(self.output_dir / 'final_evaluation'),
