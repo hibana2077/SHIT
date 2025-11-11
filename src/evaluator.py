@@ -62,8 +62,10 @@ class Evaluator:
 
         # Derive transforms from the target timm model's pretrained config to
         # ensure evaluation preprocessing matches training/backbone expectations.
-        # Use shared helper to obtain transforms & config
-        test_transform, _, data_cfg = make_timm_transforms(
+        # Use shared helper to obtain transforms & config. IMPORTANT: use the
+        # validation (is_training=False) transform for evaluation, not the
+        # training transform.
+        _, test_transform, data_cfg = make_timm_transforms(
             self.config.model_name, pretrained=True
         )
 
