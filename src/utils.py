@@ -200,7 +200,17 @@ def load_checkpoint(checkpoint_path: str, model: nn.Module, optimizer: Optional[
     with torch.serialization.safe_globals([TrainConfig, EvalConfig]):
         checkpoint = torch.load(checkpoint_path, map_location='cpu', weights_only=False)
     
-    model.load_state_dict(checkpoint['model_state_dict'])
+    # Filter out profiling metrics added by thop/fvcore (total_ops, total_params)
+    state_dict = checkpoint['model_state_dict']
+    filtered_state_dict = {k: v for k, v in state_dict.items() 
+                          if not k.endswith(('.total_ops', '.total_params'))}
+    
+    # Only warn if keys were filtered
+    if len(filtered_state_dict) < len(state_dict):
+        num_filtered = len(state_dict) - len(filtered_state_dict)
+        print(f"Filtered out {num_filtered} profiling metric keys from checkpoint")
+    
+    model.load_state_dict(filtered_state_dict)
     
     if optimizer is not None and 'optimizer_state_dict' in checkpoint:
         optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
