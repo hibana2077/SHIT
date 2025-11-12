@@ -16,4 +16,9 @@ export HF_HUB_OFFLINE=1
 
 cd ../../..
 python3 -m src.train \
+    --model-name vit_base_patch16_clip_384.laion2b_ft_in12k_in1k \
     --dataset-name cub_200_2011 \
+    --batch-size 32 \
+    --num-epochs 100 \
+    --lr 1e-4 \
+    --output-dir ./outputs/cub_vits --num-classes 200 --val-split test
