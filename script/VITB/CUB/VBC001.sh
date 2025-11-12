@@ -4,7 +4,7 @@
 #PBS -l ngpus=1
 #PBS -l ncpus=12
 #PBS -l mem=24GB
-#PBS -l walltime=08:00:00
+#PBS -l walltime=28:00:00
 #PBS -l wd
 #PBS -l storage=scratch/rp06
 
@@ -21,4 +21,4 @@ python3 -m src.train \
     --batch-size 32 \
     --num-epochs 100 \
     --lr 1e-4 \
-    --output-dir ./outputs/cub_vits --num-classes 200 --val-split test
+    --output-dir ./outputs/cub_vits --num-classes 200 --val-split test >> VBC001.log
