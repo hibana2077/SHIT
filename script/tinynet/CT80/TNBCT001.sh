@@ -21,4 +21,4 @@ python3 -m src.train \
     --batch-size 32 \
     --num-epochs 200 \
     --lr 1e-4 \
-    --output-dir ./outputs/TNBT001 --num-classes 80 --val-split test >> TNBT001.log
+    --output-dir ./outputs/TNBCT001 --num-classes 80 --val-split test >> TNBCT001.log

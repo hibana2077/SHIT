@@ -9,3 +9,13 @@
 | tinynet_e.in1k | 106 | 59.874 | 40.126 | 81.774 | 18.226 | 2.04 | 0.875 | bicubic |
 
 ## Results on CUB-200-2011
+
+## Results on Cotton80
+
+| code | model | top1 acc | gflops |
+|------|-------|----------|----------|
+| TNACT001 | TinyNet-A | 0.3583 | 0.3465 |
+| TNBCT001 | TinyNet-B | TBC | TBC |
+| TNCCT001 | TinyNet-C | TBC | TBC |
+| TNDCT001 | TinyNet-D | TBC | TBC |
+| TNECT001 | TinyNet-E | TBC | TBC |
