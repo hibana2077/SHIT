@@ -1,0 +1,10 @@
+qsub TNACT001.sh
+sleep 1
+qsub TNBCT001.sh
+sleep 1
+qsub TNCCT001.sh
+sleep 1
+qsub TNDCT001.sh
+sleep 1
+qsub TNECT001.sh
+sleep 1
