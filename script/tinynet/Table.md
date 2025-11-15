@@ -10,6 +10,14 @@
 
 ## Results on CUB-200-2011
 
+| code | model | top1 acc | gflops |
+|------|-------|----------|----------|
+| TNACT001 | TinyNet-A | 0.8153 | -- |
+| TNBCT001 | TinyNet-B | 0.7975 | -- |
+| TNCCT001 | TinyNet-C | 0.7680 | -- |
+| TNDCT001 | TinyNet-D | 0.7061 | -- |
+| TNECT001 | TinyNet-E | 0.6326 | -- |
+
 ## Results on Cotton80
 
 - FVCORE for calculating FLOPS:
@@ -17,7 +25,7 @@
 | code | model | top1 acc | gflops |
 |------|-------|----------|----------|
 | TNACT001 | TinyNet-A | 0.3583 | 0.3465 |
-| TNBCT001 | TinyNet-B | TBC | TBC |
-| TNCCT001 | TinyNet-C | TBC | TBC |
-| TNDCT001 | TinyNet-D | TBC | TBC |
+| TNBCT001 | TinyNet-B | 0.3875 | TBC |
+| TNCCT001 | TinyNet-C | 0.2792 | TBC |
+| TNDCT001 | TinyNet-D | 0.3000 | TBC |
 | TNECT001 | TinyNet-E | 0.2542 | 0.02457 |
