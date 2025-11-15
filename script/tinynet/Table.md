@@ -12,10 +12,12 @@
 
 ## Results on Cotton80
 
+- FVCORE for calculating FLOPS:
+
 | code | model | top1 acc | gflops |
 |------|-------|----------|----------|
 | TNACT001 | TinyNet-A | 0.3583 | 0.3465 |
 | TNBCT001 | TinyNet-B | TBC | TBC |
 | TNCCT001 | TinyNet-C | TBC | TBC |
 | TNDCT001 | TinyNet-D | TBC | TBC |
-| TNECT001 | TinyNet-E | TBC | TBC |
+| TNECT001 | TinyNet-E | 0.2542 | 0.02457 |
