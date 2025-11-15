@@ -16,9 +16,9 @@ export HF_HUB_OFFLINE=1
 
 cd ../../..
 python3 -m src.train \
-    --model-name tinynet_d.in1k \
+    --model-name tinynet_e.in1k \
     --dataset-name cub_200_2011 \
     --batch-size 32 \
     --num-epochs 200 \
     --lr 1e-4 \
-    --output-dir ./outputs/TNDC001 --num-classes 200 --val-split test >> TNDC001.log
+    --output-dir ./outputs/TNEC001 --num-classes 200 --val-split test >> TNEC001.log
