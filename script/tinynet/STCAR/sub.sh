@@ -1,0 +1,10 @@
+qsub TNASTCAR001.sh
+sleep 1
+qsub TNBSTCAR001.sh
+sleep 1
+qsub TNCSTCAR001.sh
+sleep 1
+qsub TNDSTCAR001.sh
+sleep 1
+qsub TNESTCAR001.sh
+sleep 1
